@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Optional
 from spotify_metadata import get_playlist_tracks
 from mutagen.mp3 import MP3
-from mutagen.id3 import ID3, APIC, TIT2, TPE1, TALB, error
+from mutagen.id3 import ID3, APIC, TIT2, TPE1, TPE2, TALB, error
 
 logging.basicConfig(
     level=logging.INFO,
@@ -39,10 +39,12 @@ def get_itunes_metadata(artist: str, title: str) -> Optional[dict[str, str]]:
         data = r.json()
         if data.get("resultCount", 0) > 0:
             result = data["results"][0]
+            cover_url = result.get("artworkUrl100", "").replace("100x100bb.jpg", "1000x1000bb.jpg")
             return {
                 "album": result.get("collectionName"),
                 "title": result.get("trackName", title),
                 "artist": result.get("artistName", artist),
+                "cover_url": cover_url if cover_url else None,
             }
     except Exception as e:
         logging.warning(f"iTunes lookup failed for {artist} - {title}: {e}")
@@ -58,6 +60,8 @@ def download_track(
     track_info: dict, output_path: Path, cookie_file: Optional[str]
 ) -> bool:
     """Downloads audio from YouTube Music via yt-dlp."""
+    import tempfile
+    import shutil
     search_query = (
         f"ytsearch1:{track_info['artist']} - {track_info['title']} official audio"
     )
@@ -73,8 +77,11 @@ def download_track(
         "--quiet",
     ]
 
+    temp_cookie_file = None
     if cookie_file and Path(cookie_file).exists():
-        cmd.extend(["--cookies", cookie_file])
+        temp_cookie_file = tempfile.NamedTemporaryFile(delete=False, suffix=".txt")
+        shutil.copy2(cookie_file, temp_cookie_file.name)
+        cmd.extend(["--cookies", temp_cookie_file.name])
 
     try:
         subprocess.run(cmd, check=True)
@@ -82,6 +89,12 @@ def download_track(
     except subprocess.CalledProcessError as e:
         logging.error(f"yt-dlp failed for {track_info['title']}: {e}")
         return False
+    finally:
+        if temp_cookie_file:
+            try:
+                Path(temp_cookie_file.name).unlink(missing_ok=True)
+            except Exception:
+                pass
 
 
 def tag_file(file_path: Path, track_info: dict) -> bool:
@@ -95,6 +108,7 @@ def tag_file(file_path: Path, track_info: dict) -> bool:
 
         audio.tags.add(TIT2(encoding=3, text=track_info["title"]))
         audio.tags.add(TPE1(encoding=3, text=track_info["artist"]))
+        audio.tags.add(TPE2(encoding=3, text=track_info["artist"]))
         audio.tags.add(TALB(encoding=3, text=track_info["album"]))
 
         if track_info.get("cover_url"):
@@ -110,7 +124,7 @@ def tag_file(file_path: Path, track_info: dict) -> bool:
                     )
                 )
 
-        audio.save()
+        audio.save(v2_version=3)
         return True
     except Exception as e:
         logging.error(f"Tagging failed for {file_path}: {e}")
@@ -146,8 +160,11 @@ def run_sync() -> None:
 
         for track in tracks:
             itunes_meta = get_itunes_metadata(track["artist"], track["title"])
-            if itunes_meta and itunes_meta.get("album"):
-                track["album"] = itunes_meta["album"]
+            if itunes_meta:
+                if itunes_meta.get("album"):
+                    track["album"] = itunes_meta["album"]
+                if itunes_meta.get("cover_url"):
+                    track["cover_url"] = itunes_meta["cover_url"]
 
             track_id = f"{track['artist']} - {track['title']}"
             if track_id in state["downloaded_tracks"]:
