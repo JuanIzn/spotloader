@@ -80,6 +80,7 @@ def download_track(
     temp_cookie_file = None
     if cookie_file and Path(cookie_file).exists():
         temp_cookie_file = tempfile.NamedTemporaryFile(delete=False, suffix=".txt")
+        temp_cookie_file.close()  # Close the file handle before copying
         shutil.copy2(cookie_file, temp_cookie_file.name)
         cmd.extend(["--cookies", temp_cookie_file.name])
 
