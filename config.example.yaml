@@ -1,0 +1,12 @@
+# Spotloader Configuration
+
+# Spotify playlist URLs to sync
+playlists:
+  - "https://open.spotify.com/playlist/YOUR_PLAYLIST_ID_HERE"
+
+# Output directory for downloaded music
+output_dir: "music"
+
+# Path to your YouTube cookies.txt (exported from browser)
+# Recommended to avoid YouTube download limits and 403 errors
+cookie_file: "cookies.txt"

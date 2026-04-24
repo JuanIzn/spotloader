@@ -1,0 +1,9 @@
+services:
+  spotloader:
+    build: .
+    container_name: spotloader
+    volumes:
+      - ./music:/app/music
+      - ./.state:/app/.state
+      - ./config.yaml:/app/config.yaml:ro
+      - ./cookies.txt:/app/cookies.txt:ro

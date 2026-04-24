@@ -1,0 +1,23 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+.temp
+
+# Local Config and State
+.config/
+.state/
+cookies.txt
+config.yaml
+
+# Output
+music/
+sync.log
+track_yt.json
+playlist_embed.html
+
+# IDEs
+.vscode/
+.idea/
+.DS_Store
