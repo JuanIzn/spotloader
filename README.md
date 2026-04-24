@@ -11,7 +11,7 @@ A streamlined automation tool designed to keep your local music library in sync 
 ### Why this project?
 Most Spotify downloaders rely on the official Web API, which has become increasingly restrictive for Free accounts (rate limits, developer app requirements, etc.). 
 
-This tool uses a **Custom Scraping Engine** combined with **iTunes Metadata Enrichment** to fetch perfect ID3 tags (Artist, Album, High-Res Covers) without needing a single Spotify API key. It's built to just work.
+This tool uses a **Custom Scraping Engine** combined with **iTunes Metadata Enrichment** to fetch perfect ID3 tags (Artist, Album, High-Res Covers) without needing a single Spotify API key. It's built to run quickly and reliably, making it perfect for scheduling via **cron** or external task runners.
 
 ---
 
@@ -31,6 +31,9 @@ The recommended way to run the synchronizer is using **Docker Compose**.
    ```
 
 3. **Schedule periodic syncs** (optional, via cron):
+
+Open cron with `crontab -e`, then add:
+
    ```bash
    # Run every day at 3 AM
    0 3 * * * cd /path/to/spotloader && docker compose up --build
